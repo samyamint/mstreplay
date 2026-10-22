@@ -1,10 +1,12 @@
 ![STREPLAY](https://raw.githubusercontent.com/evwltrs/streplay/main/docs/brand/streplay-banner.png)
 
+**STREPLAY for macOS — no FFmpeg required.** Apple Silicon and Intel, macOS 12 or later.
+
 **Replays for STRAFTAT.** Every round you play is recorded automatically. Watch it back afterwards inside the real map: from your own eyes (with your HUD, arms, hitmarkers and sounds), from a free camera, or from any player. Then render clips up to 4K at any frame rate, with real motion blur, for your edits.
 
 ## Features
 
-- **Automatic recording.** Every round is saved to `Documents\STREPLAY` (or `C:\Users\<you>\STREPLAY` if your Documents folder syncs to OneDrive, so replays don't fill your cloud storage). A small `● REC` shows while it records. Press **F9** to turn recording off or back on.
+- **Automatic recording.** Every round is saved to `~/Documents/STREPLAY` by default (change it in Settings). A small `● REC` shows while it records. Press **F9** to turn recording off or back on.
 - **Markers.** Press **F8** to mark a moment. Press F8 right after a kill to flag that kill. Your kills and deaths are marked automatically.
 - **Replay browser.** Click **Replays (F10)** on the main menu. Rounds are grouped by match, and markers jump straight to the moment.
 - **Highlights.** Your kills across every recording, ranked best first (flicks, headshots, quickscopes, multi-kills, long range…). Filter them, then **Watch** one to open the replay with the clip already set around it.
@@ -23,11 +25,17 @@ STREPLAY only records what your own game already shows you. It is marked as vani
 
 ## Install
 
-Install with a mod manager: **r2modman** or the Thunderstore Mod Manager. BepInEx is installed for you. Start the game with **Start modded**.
+Use a macOS-compatible BepInEx 5 setup or mod manager (such as r2modmac). The Windows Thunderstore Mod Manager does not run on macOS.
 
-To render straight to **video** files (MP4/MOV), also install **STREPLAY FFMPEG** (`1nf-STREPLAY_FFMPEG`), which contains ffmpeg. STREPLAY finds it automatically. If you already have ffmpeg, you can use that instead: put `ffmpeg.exe` in an `ffmpeg` folder inside your replay folder, or on your PATH, or set `FfmpegPath` in the config.
+1. Build the local package using [BUILDING.md](BUILDING.md), or use `dist/STREPLAY-macOS-1.0.0.zip` if already built.
+2. Close STRAFTAT. Extract the package and copy **both** `streplay.dll` and `streplay-encoder` from `BepInEx/plugins/streplay/` into the same folder inside your active profile's `BepInEx/plugins/streplay/` directory. Use your manager's **Browse profile folder** to find it. Do not copy the ZIP's outer `BepInEx` folder inside another `BepInEx` folder.
+3. Launch the game through your macOS BepInEx launcher or your manager's modded launch option.
 
-Without ffmpeg, renders are saved as PNG frames plus a `.wav` file, which any video editor can import.
+MP4 (H.264/H.265) and MOV (ProRes 4444) export use Apple's built-in **AVFoundation** through the bundled universal encoder. No FFmpeg installation or add-on is used. MP4 sound is AAC; ProRes sound is PCM. If the encoder cannot start or the selected codec/settings are unsupported, STREPLAY saves PNG frames and `audio.wav` instead. If encoding fails after rendering starts, the error is shown and the source WAV is kept; retry using PNG.
+
+The encoder restores its executable permission automatically if the ZIP extractor removed it. H.264/H.265 quality keeps the existing `Render.Crf` setting (lower means higher bitrate), mapped to AVFoundation's bitrate controls. It is not a CRF or lossless encoding mode.
+
+On keyboards where the function keys control brightness or media, use **Fn/Globe + F8/F9/F10/F11**, or rebind them in Settings.
 
 ## Using it
 
@@ -89,7 +97,7 @@ Everything else, including the replay folder and render defaults, is in r2modman
 
 ## Problems?
 
-Report bugs at **https://github.com/evwltrs/streplay/issues**. Press **F11** in a match or a replay to write a `dump_*.txt` to the replay folder, and attach it along with `BepInEx\LogOutput.log` from your r2modman profile (Settings → Browse profile folder).
+Report bugs at **https://github.com/evwltrs/streplay/issues**. Press **F11** in a match or a replay to write a `dump_*.txt` to the replay folder, and attach it along with `BepInEx/LogOutput.log` from your r2modman profile (Settings → Browse profile folder).
 
 ## Source
 

@@ -33,7 +33,6 @@ namespace Streplay
     //   renderasync ...          same as render, but the script carries on (e.g. wait 3, then rendercancel)
     //   rendercancel             cancel the running render, like Esc
     //   renderpanel on|off       show the render settings panel
-    //   ffmpegpath <path>|none   set Render.FfmpegPath
     //   highlights [n]           wait for the highlight scan, log the top n across all matches
     //   hltab [all]              show the browser's Highlights tab (latest match, or all)
     //   hlwatch <n>              open the n-th best highlight (all matches) like the browser's Watch button
@@ -226,7 +225,6 @@ namespace Streplay
                 case "renderasync": { var r = Render(rp, a); StartCoroutine(r); return null; }
                 case "rendercancel": rp.TestCancelRender(); return null;
                 case "renderpanel": rp.TestRenderPanel(a[1] == "on"); return null;
-                case "ffmpegpath": Plugin.FfmpegPath.Value = a.Length > 1 && a[1] != "none" ? string.Join(" ", a.Skip(1)) : ""; Log($"ffmpeg: {Ffmpeg.Find() ?? "not found"}"); return null;
                 case "localsound": LocalSound(a[1], a.Length > 2 ? a[2] : ""); return null;
                 default: Log("unknown command"); return null;
             }
@@ -438,26 +436,21 @@ namespace Streplay
             yield return new WaitForSecondsRealtime(1f);
         }
 
-        // screenrec: the back buffer (game + IMGUI) read back each frame and piped to ffmpeg at a steady real-time rate;
-        // a slow frame is repeated, so the video keeps the wall clock. Unlike a desktop capture it doesn't need the game
-        // focused or fullscreen.
-        FfmpegSink _rec;
+        NativeVideoSink _rec;
         RenderTexture _recRT;
         int _recW, _recH, _recIndex;
 
         void StartRec(string path, int fps)
         {
             StopRec();
-            string ffmpeg = Ffmpeg.Find();
-            if (ffmpeg == null) { Log("screenrec: ffmpeg not found"); return; }
             _recRT = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGB32);
             _recW = Screen.width & ~1; _recH = Screen.height & ~1; _recIndex = 0;
-            _rec = new FfmpegSink(ffmpeg, path, RenderFormat.H264, _recW, _recH, fps, 14, null, "veryfast");
+            _rec = new NativeVideoSink(path, RenderFormat.H264, _recW, _recH, fps, 14, null);
             Log($"screenrec {_recW}x{_recH} @ {fps} -> {path}");
             StartCoroutine(RecLoop(_rec, fps));
         }
 
-        IEnumerator RecLoop(FfmpegSink sink, int fps)
+        IEnumerator RecLoop(NativeVideoSink sink, int fps)
         {
             var eof = new WaitForEndOfFrame();
             float t0 = Time.realtimeSinceStartup;

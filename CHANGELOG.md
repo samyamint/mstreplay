@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased — macOS port
+
+- Replace external FFmpeg encoding with a bundled AVFoundation helper for H.264/H.265 MP4 and ProRes 4444 MOV, including sound.
+- Support Apple Silicon and Intel on macOS 12 or later, with PNG/WAV fallback when native encoding cannot start.
+- Use Finder for opening folders, accept Command key bindings, and discover the macOS Steam game assemblies.
+- Build and package the native encoder locally; remove the Windows FFmpeg companion package.
+
 ## 1.0.0
 
 First public release.

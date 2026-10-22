@@ -1,38 +1,44 @@
-# Building STREPLAY
+# Building STREPLAY for macOS
 
-You need the [.NET SDK](https://dotnet.microsoft.com/download) (8 or newer) and STRAFTAT installed. The game's own DLLs are referenced from your install and never committed.
+You need macOS 12 or later, the [.NET SDK](https://dotnet.microsoft.com/download) (8 or newer), Apple's Command Line Tools (`xcode-select --install`), and STRAFTAT installed. The game's own DLLs are referenced from your install and never committed.
 
-1. If STRAFTAT isn't in Steam's default library (`C:\Program Files (x86)\Steam\steamapps\common\STRAFTAT`), copy `local.props.example` to `local.props` and set your game folder in it. `local.props` is git-ignored.
-2. Build:
+## Build and package
 
-   ```
-   dotnet build -c Release
-   ```
+```sh
+dotnet build -c Release -t:ThunderstorePack
+```
 
-   The build also copies `streplay.dll` into an r2modman profile's plugins folder (`StreplayPublic` by default; set `-p:R2Profile=<name>`, or `-p:PluginsDir=<folder>` to put it anywhere). Close the game first, or the copy is skipped.
-3. Package for Thunderstore:
+The build finds the game at `~/Library/Application Support/Steam/steamapps/common/STRAFTAT`, using assemblies inside `STRAFTAT.app/Contents/Resources/Data/Managed`. For a different Steam library, copy `local.props.example` to `local.props` and edit `GameDir`, or run:
 
-   ```
-   dotnet build -c Release -t:ThunderstorePack
-   ```
+```sh
+dotnet build -c Release -t:ThunderstorePack -p:GameDir="/Volumes/Games/steamapps/common/STRAFTAT"
+```
 
-   This writes `dist\1nf-STREPLAY-<version>.zip`. The version in `thunderstore/manifest.json` and `src/Plugin.cs` must match, or it stops.
+You can also point `GameDir` at the `.app` bundle itself, or set `-p:ManagedDir="/full/path/to/Managed"` directly. `local.props` is git-ignored.
 
-The optional ffmpeg add-on is packed with `powershell -File tools\pack-ffmpeg.ps1 -Ffmpeg <path to ffmpeg.exe>`. The icons are made from `docs/brand/streplay-logo.png` with `python tools/make-icons.py`.
+`tools/build-native.sh` compiles and ad-hoc signs a universal **arm64 + x86_64** `streplay-encoder` using Swift and Apple's AVFoundation. The build outputs `bin/Release/streplay.dll` and `bin/Release/streplay-encoder`. No FFmpeg is downloaded, invoked, linked, or packaged. The Swift helper can also be built alone with `sh tools/build-native.sh`.
 
-Debug builds also include a scripted test harness (`src/AutoTest.cs`), which never goes into release packages.
+The package is `dist/STREPLAY-macOS-1.0.0.zip`. It contains both files in `BepInEx/plugins/streplay/`, plus the manifest, icon, README and changelog. Keep the executable beside the DLL when installing into a macOS BepInEx 5 profile. The package retains the upstream version while this local port is under development; no publish or upload step is part of building it.
 
-## Releasing
+## Optional local deployment
 
-Every release ships both packages, so the latest release always has the current mod and the current ffmpeg add-on:
+Builds do not automatically modify a Mac mod-manager profile. To opt in, close the game and set the full plugins path for your chosen profile:
 
-1. Bump the version in `thunderstore/manifest.json`, `streplay.csproj` and `src/Plugin.cs`, and add a `CHANGELOG.md` entry. Commit and push.
-2. Build both zips (above) from that commit, with a clean working tree.
-3. Publish them as a GitHub release on that commit:
+```sh
+dotnet build -c Release -p:PluginsDir="/full/path/to/profile/BepInEx/plugins"
+```
 
-   ```
-   gh release create v<version> dist/1nf-STREPLAY-<version>.zip dist/1nf-STREPLAY_FFMPEG-<ffmpeg version>.zip --target <commit> --title "STREPLAY <version>" --notes-file <notes.md>
-   ```
+Both files are copied into a `streplay` subfolder. BepInEx itself and the game's launch setup are managed separately.
 
-   Put the SHA-256 of each zip in the notes (`sha256sum dist/*.zip`).
-4. Upload the same two zips to Thunderstore: the add-on only when its version changed, since Thunderstore doesn't accept the same version twice.
+## Checks
+
+```sh
+python3 tests/test-native.py
+dotnet build -c Debug
+```
+
+The native integration tests feed synthetic bottom-up RGBA frames and a stereo WAV into the actual encoder, then decode the movies with AVFoundation. They check all three codecs, sound, colors, orientation, frame timing, early EOF (render cancellation), partial pipe reads, malformed input, and preservation of existing outputs. They require only Python 3 and Command Line Tools; no third-party Python packages. The C# launcher can also be exercised with `python3 tests/test-launcher.py` (.NET SDK 8 or newer).
+
+Debug builds include the scripted in-game harness in `src/AutoTest.cs`; Release packages exclude it. Test a real recording and replay in-game before publishing: automated encoder tests do not exercise Unity rendering, Metal readback, game hooks, or your BepInEx launch configuration.
+
+Build this macOS package on a Mac. On other platforms the managed plugin still builds against supplied game DLLs and can export PNG sequences, but native video packaging requires Apple's toolchain.

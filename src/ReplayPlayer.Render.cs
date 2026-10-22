@@ -10,10 +10,6 @@ using UnityEngine.Rendering.PostProcessing;
 
 namespace Streplay
 {
-    // Montage export: the replay's cameras (world, viewmodel overlays, the game's HUD) render into an off-screen
-    // target of any size; several sub-frames spread over the shutter are averaged on the GPU for motion blur; the
-    // frames are read back asynchronously and piped to ffmpeg (or written as PNGs). Our own UI only ever draws to
-    // the window, so it can't end up in the output.
     internal sealed partial class ReplayPlayer
     {
         sealed class RenderJob
@@ -21,7 +17,6 @@ namespace Streplay
             public float Start, End, Speed, Shutter; // shutter as a fraction of the frame interval
             public int W, H, Fps, Sub, Frames;
             public int Crf = -1;                      // -1 = the Crf setting
-            public string Preset;                     // encoder speed preset, null = the quality default
             public int MaxSub;                        // adaptive sub-frame ceiling (0 = the setting)
             public bool Adaptive = true;
 
@@ -349,14 +344,17 @@ namespace Streplay
                 Directory.CreateDirectory(root);
                 if (job.Format != RenderFormat.PngSequence)
                 {
-                    string ffmpeg = Ffmpeg.Find();
-                    if (ffmpeg == null)
+                    try
                     {
-                        Plugin.Log.LogWarning("[render] " + Ffmpeg.NotFoundMessage);
+                        job.Sink = new NativeVideoSink(Path.Combine(root, name + NativeVideoSink.Extension(job.Format)),
+                            job.Format, job.W, job.H, job.Fps, job.Crf >= 0 ? job.Crf : Plugin.RenderCrf.Value, wav);
+                    }
+                    catch (Exception e)
+                    {
+                        Plugin.Log.LogWarning("[render] " + e.Message + " Using PNG frames instead.");
+                        Toast("Video encoder unavailable; saving PNG frames and audio instead.", 8f);
                         job.Format = RenderFormat.PngSequence;
                     }
-                    else job.Sink = new FfmpegSink(ffmpeg, Path.Combine(root, name + FfmpegSink.Extension(job.Format)), job.Format, job.W, job.H, job.Fps, job.Crf >= 0 ? job.Crf : Plugin.RenderCrf.Value, wav,
-                        job.Preset ?? (job.Sub <= 1 ? "medium" : null)); // no blur: frames come fast, a quicker preset keeps up
                 }
                 if (job.Sink == null)
                 {
@@ -957,10 +955,10 @@ namespace Streplay
                 Ui.Text(new Rect(cx + 10f, y, w - 180f, rh), Path.Combine(Plugin.ReplayFolder.Value, "renders"), 12, Ui.Faint);
             y += rh + 10f;
 
-            // footer: ffmpeg and the last result
-            string ffmpeg = Ffmpeg.Cached;
+            bool nativeVideo = NativeVideo.Find() != null;
             if (Plugin.RenderFormatSetting.Value != RenderFormat.PngSequence)
-                Ui.Text(new Rect(lx, y, w - 44f, 34f), ffmpeg != null ? "ffmpeg: " + ffmpeg : Ffmpeg.NotFoundMessage, 11, ffmpeg != null ? Ui.Faint : Ui.Warn, false, TextAnchor.UpperLeft, true);
+                Ui.Text(new Rect(lx, y, w - 44f, 34f), nativeVideo ? "Video: Apple AVFoundation" : NativeVideo.UnavailableMessage,
+                    11, nativeVideo ? Ui.Faint : Ui.Warn, false, TextAnchor.UpperLeft, true);
             y += 34f;
             if (_renderSummary != null) Ui.Text(new Rect(lx, y, w - 44f, 34f), _renderSummary, 11, Ui.Good, false, TextAnchor.UpperLeft, true);
         }

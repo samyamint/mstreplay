@@ -74,13 +74,17 @@ namespace Streplay
 
         static Color _oldCursor, _oldSelection;
 
-        // Explorer handles any folder name (OpenURL with file:/// breaks on # or %)
         public static void OpenFolder(string path)
         {
             try
             {
                 System.IO.Directory.CreateDirectory(path);
-                System.Diagnostics.Process.Start("explorer.exe", "\"" + path + "\"");
+                string opener = Application.platform == RuntimePlatform.OSXPlayer || Application.platform == RuntimePlatform.OSXEditor
+                    ? "/usr/bin/open" : Application.platform == RuntimePlatform.WindowsPlayer || Application.platform == RuntimePlatform.WindowsEditor
+                    ? "explorer.exe" : "xdg-open";
+                var info = new System.Diagnostics.ProcessStartInfo(opener) { UseShellExecute = false };
+                info.ArgumentList.Add(System.IO.Path.GetFullPath(path));
+                using (System.Diagnostics.Process.Start(info)) { }
             }
             catch (System.Exception e) { Plugin.Log.LogWarning($"Could not open {path}: {e.Message}"); }
         }

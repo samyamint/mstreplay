@@ -147,7 +147,7 @@ namespace Streplay
             try
             {
                 // IsPathRooted throws on characters a path can't have (a stray | or < from a paste)
-                if (p.Length == 0 || !Path.IsPathRooted(p)) { _folderNote = "Paste a full folder path, like D:\\Replays"; return; }
+                if (p.Length == 0 || !Path.IsPathRooted(p)) { _folderNote = "Paste a full folder path, like /Users/you/Replays"; return; }
                 p = Path.GetFullPath(p).TrimEnd('\\');
                 Directory.CreateDirectory(p);
                 string probe = Path.Combine(p, ".streplay-write-test");
@@ -219,6 +219,7 @@ namespace Streplay
                 if (ev.control) mods.Add(KeyCode.LeftControl);
                 if (ev.shift) mods.Add(KeyCode.LeftShift);
                 if (ev.alt) mods.Add(KeyCode.LeftAlt);
+                if (ev.command) mods.Add(KeyCode.LeftCommand);
                 _capture.Value = new KeyboardShortcut(k, mods.ToArray());
             }
             _capture = null;

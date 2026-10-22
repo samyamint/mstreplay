@@ -70,7 +70,6 @@ namespace Streplay
         internal static ConfigEntry<bool> RenderAudio;
         internal static ConfigEntry<bool> RenderMuteSoundPass;
         internal static ConfigEntry<string> RenderFolder;
-        internal static ConfigEntry<string> FfmpegPath;
         internal static ConfigEntry<bool> SlowMoKills;
         internal static ConfigEntry<bool>[] HudShow;
         internal static ConfigEntry<float> SlowMoSpeed;
@@ -165,9 +164,9 @@ namespace Streplay
             RenderMaxSubFrames = Config.Bind("Render", "MaxSubFrames", 128,
                 new ConfigDescription("Most sub-frames a single frame can get with AdaptiveSubFrames.", new AcceptableValueRange<int>(2, 512)));
             RenderFormatSetting = Config.Bind("Render", "Format", RenderFormat.H264,
-                "H264 / H265 (.mp4, high bitrate), ProRes4444 (.mov) or PngSequence. Video formats need ffmpeg; without it PNG frames are written.");
+                "H264 / H265 (.mp4, high bitrate), ProRes4444 (.mov) or PngSequence. Video uses Apple's AVFoundation on macOS; if unavailable, PNG frames are written.");
             RenderCrf = Config.Bind("Render", "Crf", 14,
-                new ConfigDescription("H.264/H.265 quality (constant rate factor; lower = better and bigger, 0 = lossless).", new AcceptableValueRange<int>(0, 51)));
+                new ConfigDescription("H.264/H.265 quality (0..51; lower = higher bitrate and bigger files). Mapped to a bitrate budget by AVFoundation; 0 is not lossless.", new AcceptableValueRange<int>(0, 51)));
             RenderAudio = Config.Bind("Render", "Audio", true,
                 "Write the replay's sound for the rendered range (audio.wav next to PNG frames, muxed into video files).");
             RenderMuteSoundPass = Config.Bind("Render", "MuteSoundPass", true,
@@ -186,8 +185,6 @@ namespace Streplay
             for (int i = 0; i < HudReplay.Parts.Length; i++)
                 HudShow[i] = Config.Bind("HUD", "Show" + HudReplay.Parts[i].key, HudReplay.PartDefault(HudReplay.Parts[i].key),
                     $"Show the game's {HudReplay.Parts[i].label.ToLowerInvariant()} in My view and in renders.");
-            FfmpegPath = Config.Bind("Render", "FfmpegPath", "",
-                "ffmpeg.exe (or the folder containing it). Empty = look in <ReplayFolder>\\ffmpeg, the BepInEx plugin folders (an ffmpeg package), then PATH.");
 
             DumpKey = Config.Bind("Debug", "DumpKey", new KeyboardShortcut(KeyCode.F11),
                 "Write a diagnostic dump (the scene and every networked object) to the replay folder, to attach to bug reports.");
