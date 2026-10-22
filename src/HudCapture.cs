@@ -97,7 +97,8 @@ namespace Streplay
         float _nextRootScan;
         Transform _localRoot;
 
-        static readonly string[] ExcludedPauseFields = { "mainMenu", "pauseMenu", "optionsMenu", "firstInterface", "secondInterface" };
+        // menus, and the "you're transmitting voice" note (voice isn't recorded, so it'd mean nothing in a replay)
+        static readonly string[] ExcludedPauseFields = { "mainMenu", "pauseMenu", "optionsMenu", "firstInterface", "secondInterface", "voiceChatText" };
 
         public void Reset()
         {
@@ -168,6 +169,8 @@ namespace Streplay
                 foreach (var name in ExcludedPauseFields)
                     if (HarmonyLib.AccessTools.Field(typeof(PauseManager), name)?.GetValue(pm) is GameObject go && go != null)
                         _excluded.Add(go);
+            // the proximity voice chat's "who's talking" tags (voice itself isn't recorded either)
+            if (VoiceChatUI.Instance != null) _excluded.Add(VoiceChatUI.Instance.gameObject);
 
             var ddol = Net.DdolScene();
             if (ddol.IsValid())

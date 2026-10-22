@@ -18,7 +18,7 @@ You can also point `GameDir` at the `.app` bundle itself, or set `-p:ManagedDir=
 
 `tools/build-native.sh` compiles and ad-hoc signs a universal **arm64 + x86_64** `streplay-encoder` using Swift and Apple's AVFoundation. The build outputs `bin/Release/streplay.dll` and `bin/Release/streplay-encoder`. No FFmpeg is downloaded, invoked, linked, or packaged. The Swift helper can also be built alone with `sh tools/build-native.sh`.
 
-The package is `dist/STREPLAY-macOS-1.0.0.zip`. It contains both files in `BepInEx/plugins/streplay/`, plus the manifest, icon, README and changelog. Keep the executable beside the DLL when installing into a macOS BepInEx 5 profile. The package retains the upstream version while this local port is under development; no publish or upload step is part of building it.
+The package is `dist/STREPLAY-macOS-1.1.0.zip`. It contains both files in `BepInEx/plugins/streplay/`, plus the manifest, icon, README and changelog. Keep the executable beside the DLL when installing into a macOS BepInEx 5 profile. The package uses the upstream 1.1.0 version. Building does not publish or upload it.
 
 ## Optional local deployment
 
